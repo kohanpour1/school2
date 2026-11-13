@@ -5,22 +5,14 @@ root = Path(__file__).resolve().parents[1]
 www = root / "app" / "src" / "main" / "assets" / "www"
 www.mkdir(parents=True, exist_ok=True)
 app = www / "app.js"
-# Prefer joining base64 halves
-b1 = root / "tools" / "app.js.b64.part1"
-b2 = root / "tools" / "app.js.b64.part2"
-b64f = root / "tools" / "app.js.b64"
-if b1.exists() and b2.exists():
-    raw = base64.b64decode(b1.read_text().strip() + b2.read_text().strip())
+parts = [root / "tools" / f"app.js.b64.part{i}" for i in range(4)]
+if all(p.exists() for p in parts):
+    raw = base64.b64decode("".join(p.read_text().strip() for p in parts))
     app.write_bytes(raw)
-    print("app.js from b64 parts", app.stat().st_size)
-elif b64f.exists():
-    app.write_bytes(base64.b64decode(b64f.read_text().strip()))
+    print("app.js from 4 b64 parts", app.stat().st_size)
+elif (root / "tools" / "app.js.b64").exists():
+    app.write_bytes(base64.b64decode((root / "tools" / "app.js.b64").read_text().strip()))
     print("app.js from b64", app.stat().st_size)
-elif (root / "tools" / "app_parts").exists():
-    parts = sorted((root / "tools" / "app_parts").glob("p*.js.txt"))
-    if parts:
-        app.write_text("".join(p.read_text(encoding="utf-8") for p in parts), encoding="utf-8")
-        print("app.js from text parts", app.stat().st_size)
 elif app.exists():
     print("app.js OK", app.stat().st_size)
 else:
